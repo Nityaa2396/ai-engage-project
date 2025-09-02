@@ -26,7 +26,7 @@ def train_engagement_predictor():
     
     # Features: TF-IDF + numerical
     tfidf_vectorizer = TfidfVectorizer(max_features=500)
-    text_features = tfidf_vectorizer.fit_transform(women_in_ai_posts_df['clean_text'])
+    text_features = tfidf_vectorizer.fit_transform(women_in_ai_posts_df['cleaned_text'])
     feature_df = pd.concat([
         pd.DataFrame(text_features.toarray()),
         women_in_ai_posts_df[['sentiment_score', 'word_count', 'has_hashtag', 'has_media']].reset_index(drop=True)

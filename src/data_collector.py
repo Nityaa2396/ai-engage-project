@@ -1,56 +1,66 @@
 import tweepy
 import pandas as pd
-from nltk.corpus import stopwords
+from datetime import datetime
+import nltk
 from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import os
+from dotenv import load_dotenv
 
-# Function to fetch Women in AI posts from X (or load LinkedIn CSV)
-def collect_women_in_ai_posts(bearer_token=None, use_csv=False):
-    """Collects posts for Women in AI analysis, either from X or a CSV for LinkedIn data."""
-    women_in_ai_posts_df = pd.DataFrame()
-    
-    if use_csv:
-        # For LinkedIn, assume user exports analytics to CSV
-        try:
-            women_in_ai_posts_df = pd.read_csv('data/sample_women_in_ai_posts.csv')
-            print("Loaded LinkedIn data from CSV!")
-        except FileNotFoundError:
-            print("CSV not found, using sample data instead.")
-            women_in_ai_posts_df = pd.read_csv('data/sample_women_in_ai_posts.csv')
-    else:
-        # Fetch from X using Tweepy
-        try:
-            client = tweepy.Client(bearer_token=bearer_token)
-            tweets = client.get_users_tweets(id='871111526282911746', max_results=100)  # Women in AI's X ID
-            data = [
-                {
-                    'text': tweet.text,
-                    'likes': tweet.public_metrics['like_count'],
-                    'reposts': tweet.public_metrics['retweet_count'],
-                    'replies': tweet.public_metrics['reply_count'],
-                    'timestamp': tweet.created_at,
-                    'has_media': 'media' in tweet.attachments if tweet.attachments else False
-                } for tweet in tweets.data
-            ]
-            women_in_ai_posts_df = pd.DataFrame(data)
-        except Exception as e:
-            print(f"Error fetching X data: {e}. Using sample CSV.")
-            women_in_ai_posts_df = pd.read_csv('data/sample_women_in_ai_posts.csv')
-    
-    # Clean text for analysis
+load_dotenv()
+bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
+client = tweepy.Client(bearer_token=bearer_token)
+
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
+analyzer = SentimentIntensityAnalyzer()
+
+def clean_text(text):
+    tokens = word_tokenize(text.lower())
     stop_words = set(stopwords.words('english'))
-    women_in_ai_posts_df['clean_text'] = women_in_ai_posts_df['text'].apply(
-        lambda x: ' '.join([word for word in word_tokenize(x.lower()) if word.isalpha() and word not in stop_words])
-    )
-    women_in_ai_posts_df['word_count'] = women_in_ai_posts_df['text'].apply(lambda x: len(x.split()))
-    women_in_ai_posts_df['has_hashtag'] = women_in_ai_posts_df['text'].apply(lambda x: '#' in x)
-    
-    # Save cleaned data
-    os.makedirs('data', exist_ok=True)
-    women_in_ai_posts_df.to_csv('data/cleaned_women_in_ai_posts.csv', index=False)
-    return women_in_ai_posts_df
+    cleaned = ' '.join([word for word in tokens if word.isalnum() and word not in stop_words])
+    return cleaned
+
+def get_sentiment(text):
+    return analyzer.polarity_scores(text)['compound']
+
+def collect_women_in_ai_data():
+    try:
+        query = '"Women in AI" OR #WomenInAI -is:retweet lang:en'
+        tweets = client.search_recent_tweets(
+            query=query,
+            tweet_fields=['created_at', 'public_metrics'],
+            max_results=10
+        )
+
+        if not tweets.data:
+            print("No tweets found!")
+            return
+
+        data = []
+        for tweet in tweets.data:
+            post = {
+                'text': tweet.text,
+                'likes': tweet.public_metrics['like_count'],
+                'reposts': tweet.public_metrics['retweet_count'],
+                'replies': tweet.public_metrics['reply_count'],
+                'timestamp': tweet.created_at,
+                'has_media': 'media' in tweet.text.lower() or 'https://t.co' in tweet.text
+            }
+            data.append(post)
+
+        df = pd.DataFrame(data)
+        df['cleaned_text'] = df['text'].apply(clean_text)
+        df['has_hashtag'] = df['text'].str.contains('#')
+        df['engagement'] = df['likes'] + df['reposts'] + 0.5 * df['replies']
+        df['sentiment_score'] = df['text'].apply(get_sentiment)
+        df['word_count'] = df['text'].apply(lambda x: len(x.split()))
+        df.to_csv('data/cleaned_women_in_ai_posts.csv', index=False)
+        print(f"Collected {len(df)} posts for Women in AI analysis!")
+
+    except Exception as e:
+        print(f"Error collecting data: {e}")
 
 if __name__ == "__main__":
-    # Replace with your X API bearer token or set use_csv=True for LinkedIn
-    posts_df = collect_women_in_ai_posts(bearer_token='YOUR_BEARER_TOKEN', use_csv=True)
-    print(f"Collected {len(posts_df)} posts for Women in AI analysis!")
+    collect_women_in_ai_data()
