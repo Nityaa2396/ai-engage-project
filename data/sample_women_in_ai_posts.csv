@@ -1,5 +1,5 @@
-text,likes,reposts,replies,timestamp,has_media
-"Join our AI ethics webinar to discuss bias in algorithms! #WomenInAI",5,2,1,2025-08-20 10:00:00,False
-"New event: Women in AI Summit 2025. Register now!",3,1,0,2025-08-18 14:30:00,True
-"Spotlight: Dr. Jane on advancing diversity in AI.",4,3,2,2025-08-15 09:15:00,True
-"What's your biggest challenge in AI? Share below!",2,0,3,2025-08-10 11:00:00,False
+text,likes,reposts,replies,timestamp,has_media,theme
+"Join our AI ethics webinar! #WomenInAI",0,0,0,2025-08-05 00:00:00,True,AI ethics
+"Women in AI Summit 2025 announced!",0,0,0,2025-08-06 00:00:00,False,Event
+"Spotlight: Dr. Jane on AI diversity",0,0,0,2025-08-07 00:00:00,True,Diversity
+"Discussing AI bias in our latest post!",2,0,0,2025-08-08 00:00:00,False,AI ethics
