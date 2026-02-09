@@ -1,71 +1,141 @@
-# Women in AI: Data Exploration & Manual Annotation
+# Women in AI USA — LinkedIn Social Media Analytics
 
-This project focuses on collecting, annotating, and analyzing social media posts related to "Women in AI," with an emphasis on both automation and thoughtful manual review.
+A Python-based analytics pipeline for tracking and visualizing LinkedIn page performance metrics for the **Women in AI USA** community.
 
----
+## Metrics Tracked
 
-## 1. Data Collection
+| Metric                | Description                                              | Source                                                |
+| --------------------- | -------------------------------------------------------- | ----------------------------------------------------- |
+| **Followers (Proxy)** | Cumulative unique impressions as audience reach proxy    | `Unique impressions (organic)`                        |
+| **Engagement Rate**   | (Clicks + Reactions + Comments + Reposts) / Impressions  | `Engagement rate (total)`                             |
+| **Post Frequency**    | Days with active engagement + impression spike detection | Computed from daily data                              |
+| **Reach**             | Total and unique impressions over time                   | `Impressions (total)`, `Unique impressions (organic)` |
 
-- **Twitter/X**  
-  - `data_collector.py`: Utilizes Twitter/X API v2 to gather posts matching the queries `"Women in AI"` or `#WomenInAI`.
-  - Output: Cleaned results are saved to `cleaned_women_in_ai_posts.csv`.
+## Project Structure
 
-- **LinkedIn**  
-  - `convert_xls_to_csv.py`: Converts LinkedIn analytics data from `linkedin_analytics.xls` to CSV format (`linkedin_women_in_ai_posts.csv`).
-  - `linkedin_data_collector.py`: Processes LinkedIn posts and enriches them with additional features.
+```
+ai-engage-project/
+├── data/
+│   ├── women_in_ai_usa_clean.csv      # Cleaned daily data (365 days)
+│   └── analysis_report.json           # Full analysis output
+├── figures/
+│   ├── impressions_trend.png           # Daily impressions + 7d rolling avg
+│   ├── engagement_rate_trend.png       # Engagement rate over time
+│   ├── monthly_summary.png             # Monthly bars + engagement line
+│   ├── day_of_week.png                 # Day-of-week performance
+│   ├── engagement_composition.png      # Clicks/reactions/comments/reposts
+│   ├── reach_analysis.png              # Total vs unique impressions
+│   └── top_days.png                    # Top 10 performing days
+├── src/
+│   ├── __init__.py
+│   ├── analysis.py                     # Core metric calculations
+│   ├── data_validation.py              # Data quality checks
+│   └── visualizations.py               # Chart generation (matplotlib)
+├── notebooks/                          # Jupyter notebooks (optional)
+├── models/                             # ML models (future)
+├── convert_xls_to_csv.py              # XLS → CSV converter
+├── requirements.txt
+└── README.md
+```
 
----
+## Quick Start
 
-## 2. Manual Annotation
+### 1. Install Dependencies
 
-- **Post Content**  
-  - Text is manually extracted from Women in AI LinkedIn Page posts, aligning post dates with those in `linkedin_analytics.xls`.
+```bash
+pip install -r requirements.txt
+```
 
-- **Theme Labeling**  
-  - Each post is assigned a `theme` (e.g., *AI ethics*, *Event*, *Diversity*) based on its content.
+### 2. Convert XLS to Clean CSV
 
-#### Annotation Guidelines
+```bash
+python convert_xls_to_csv.py <path_to_xls_file>
+```
 
-- **AI ethics**: Posts discussing fairness, bias, or ethical dimensions of AI.
-- **Event**: Announcements about conferences, webinars, or summits.
-- **Diversity**: Highlights about individuals or diversity initiatives within AI.
+This will:
 
-- Ensure post text is non-empty and enclosed in quotes (to handle commas).
-- Validate the `has_media` field: `True` for image/video, `False` otherwise.
+- Read the `.xls` file (with LibreOffice fallback for encoding issues)
+- Standardize dates to `YYYY-MM-DD` format
+- Add a computed `Total Engagement` column
+- Save to `data/women_in_ai_usa_clean.csv`
 
----
+### 3. Validate Data
 
-## 3. Data Processing
+```bash
+python src/data_validation.py data/women_in_ai_usa_clean.csv
+```
 
-Both Twitter/X and LinkedIn scripts compute the following features:
+Checks for: missing columns, null values, date gaps, duplicates, negative values, type consistency.
 
-- **cleaned_text**: Lowercased, with stopwords removed.
-- **has_hashtag**: Boolean indicating presence of hashtags.
-- **engagement**: Computed as `likes + reposts + 0.5 * replies`.
-- **sentiment_score**: Based on VADER sentiment analysis.
-- **word_count**: Number of words in the post.
+### 4. Run Analysis
 
----
+```bash
+python src/analysis.py data/women_in_ai_usa_clean.csv data/analysis_report.json
+```
 
-## 4. Visualization & Analysis
+Computes all four core metrics and saves a detailed JSON report.
 
-Explore insights in `analysis.ipynb`, including:
+### 5. Generate Charts
 
-- Word cloud visualizations
-- Engagement trend charts
-- Hashtag usage analysis
-- Theme distribution across posts
-- Missing data heatmap
+```bash
+python src/visualizations.py data/women_in_ai_usa_clean.csv figures/
+```
 
----
+Produces 7 publication-ready charts in the `figures/` directory.
 
-## Project Highlights
+### Run Everything at Once
 
-- Multi-platform data pipeline (Twitter/X & LinkedIn)
-- Balanced approach: automation + human annotation
-- Rich feature engineering for downstream analysis
-- Visual storytelling of Women in AI social media impact
+```bash
+python convert_xls_to_csv.py your_file.xls
+python src/data_validation.py data/women_in_ai_usa_clean.csv
+python src/analysis.py data/women_in_ai_usa_clean.csv data/analysis_report.json
+python src/visualizations.py data/women_in_ai_usa_clean.csv figures/
+```
 
----
+## Key Findings (Jan 28, 2025 – Jan 27, 2026)
 
-*Feel free to contribute, raise issues, or reach out for collaboration!*
+- **170,398** total impressions across 365 days
+- **82,054** unique viewers (48.2% reach ratio)
+- **8.25%** average daily engagement rate
+- **16,171** total engagements (69.8% clicks, 27.0% reactions, 2.4% comments, 0.8% reposts)
+- **360/365** days showed engagement activity (98.6% activity rate)
+- Peak days: June 9, 2025 (3,755 impressions) and November 13, 2025 (3,387 impressions)
+- Best posting days: **Wednesday, Tuesday, Friday**
+- All content is 100% organic — no sponsored posts
+
+## Data Validation Notes
+
+- **Zero null values** across all 365 rows × 20 columns
+- **3 minor negative values** in reactions/comments/reposts (LinkedIn data corrections from user undo actions)
+- **All sponsored columns are zero** — exclusively organic content
+- Date coverage is continuous with no gaps
+
+## Metric Calculation Details
+
+### Engagement Rate
+
+LinkedIn's native formula: `(Clicks + Reactions + Comments + Reposts) / Impressions`
+
+The pipeline computes this independently for verification and also provides the 7-day rolling average for trend analysis.
+
+### Post Frequency (Proxy)
+
+Since LinkedIn exports daily aggregates rather than per-post data, post frequency is estimated via:
+
+1. **Active days**: Days where total engagement > 0
+2. **Spike detection**: Days where impressions exceed 1.5× the 7-day rolling average (indicative of new post publication)
+
+### Reach Ratio
+
+`Unique Impressions / Total Impressions` — measures how much of the audience is new vs. repeat viewers. A ratio closer to 1.0 means more unique reach; lower values indicate repeat views of content.
+
+## Assumptions
+
+1. LinkedIn's 2-day data delay means the most recent 1-2 days may be incomplete.
+2. Negative values in count columns are treated as LinkedIn data corrections (post edits, undo actions).
+3. "Followers" metric uses unique impressions as a proxy since LinkedIn page analytics exports do not include follower counts directly.
+4. Post frequency is estimated, not exact, due to daily-aggregate export format.
+
+## License
+
+Internal project — Women in AI USA.

@@ -1,1 +1,37 @@
-.env
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (keep clean CSV, ignore raw XLS)
+data/*.xls
+data/*.xlsx
+!/data/women_in_ai_usa_clean.csv
+!/data/analysis_report.json
+
+# Temp
+/tmp/
+*.tmp
