@@ -34,4 +34,4 @@ data/*.xlsx
 
 # Temp
 /tmp/
-*.tmp
+*.tmp.env
